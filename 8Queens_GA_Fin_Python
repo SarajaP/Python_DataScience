@@ -1,0 +1,102 @@
+import random
+
+def random_seq(size): #making random sequence 
+    return [ random.randint(1, nq) for _ in range(nq) ]
+	
+def fitness(seq):
+    horizontal_collisions = sum([seq.count(q)-1 for q in seq])/2
+    diagonal_collisions = 0
+    
+    for i in range(len(seq)):
+        for j in range(len(seq)):
+            if ( i != j):
+                dx = abs(i-j)
+                dy = abs(seq[i] - seq[j])
+                if(dx == dy):
+                    diagonal_collisions += 1
+    
+    return int(maxFitness - (horizontal_collisions + diagonal_collisions))
+	
+def probability(seq, fitness):
+    return fitness(seq) / maxFitness
+	
+def random_pick(population, probabilities):
+    populationWithProbabilty = zip(population, probabilities)
+    total = sum(w for c, w in populationWithProbabilty)
+    r = random.uniform(0, total)
+    upto = 0
+    for c, w in zip(population, probabilities):
+        if upto + w >= r:
+            return c
+        upto += w
+    assert False, "False"
+	
+def crossover(x, y): 
+    n = len(x)
+    c = random.randint(0, n - 1)
+    return x[0:c] + y[c:n]
+	
+def mutate(x):  #randomly changing the value of a random index of a seq
+    n = len(x)
+    c = random.randint(0, n - 1)
+    m = random.randint(1, n)
+    x[c] = m
+    return x
+	
+def genetic_queen(population, fitness):
+    mutation_probability = 0.03
+    new_population = []
+    probabilities = [probability(n, fitness) for n in population]
+    for i in range(len(population)):
+        x = random_pick(population, probabilities) #seq 1
+        y = random_pick(population, probabilities) #seq 2
+        child = crossover(x, y) #creating two new child_sequences from the above 2 parent_sequences
+        if random.random() < mutation_probability:
+            child = mutate(child)
+        #print_seq(child)
+        new_population.append(child)
+        if fitness(child) == maxFitness: break
+    return new_population
+	
+def print_seq(seq):
+    print("Sequence = {},  Fitness = {}"
+        .format(str(seq), fitness(seq)))
+		
+if __name__ == "__main__":
+    nq = 8
+    maxFitness = (nq*(nq-1))/2  # 8*7/2 = 28
+    population = [random_seq(nq) for _ in range(100)]
+    
+    generation = 1
+
+    while not maxFitness in [fitness(seq) for seq in population]:
+        print("=== Generation {} ===".format(generation))
+        population = genetic_queen(population, fitness)
+        print("")
+        print("Maximum Fitness = {}".format(max([fitness(n) for n in population])))
+        generation += 1
+    final_seq = []
+    print("Solved in Generation {}!".format(generation-1))
+    for seq in population:
+        if fitness(seq) == maxFitness:
+            print("");
+            print("One of the solutions: ")
+            final_seq = seq
+            print_seq(final_seq)
+            
+    board = []
+
+    for x in range(nq):
+        board.append(["x"] * nq)
+        
+    for i in range(nq):
+        board[nq-final_seq[i]][i]="Q"
+            
+
+    def print_board(board):
+        for row in board:
+            print (" ".join(row))
+            
+    print()
+    print_board(board)
+    print(final_seq)
